@@ -45,10 +45,28 @@ class LogStash::Filters::Base64Splitter < LogStash::Filters::Base
       event.set("message", @message)
       # correct debugging log statement for reference
       # using the event.get API
+
       @logger.debug? && @logger.debug("Message is now: #{event.get("message")}")
+
+      if event.get('[base64]')
+        b64 = Base64.decode64( event.get('[base64]'))
+        s = StringIO.new(b64)
+        json = JSON.parse(Zlib::GzipReader.new(s).read)
+
+        json.each do |key|
+          e =  LogStash::Event.new("timestamp" => event["timestamp"],
+            "key" => key)
+          yield e
+        end
+        event.cancel
+      end
+
+      @logger.debug? && @logger.debug("Message is now: #{event.get("[base64]")}")
+
+
     end
 
     # filter_matched should go in the last line of our successful code
     filter_matched(event)
   end # def filter
-end # class LogStash::Filters::Example
+end # class LogStash::Filters::Base64Splitter
