@@ -36,35 +36,24 @@ class LogStash::Filters::Base64Splitter < LogStash::Filters::Base
 
   public
   def filter(event)
+    return unless filter?(event)
 
-    if @message
-      # Replace the event message with our message as configured in the
-      # config file.
+    # @logger.debug? && @logger.debug("Message is now: #{event.get("[base64]")}")
 
-      # using the event.set API
-      event.set("message", @message)
-      # correct debugging log statement for reference
-      # using the event.get API
+    if event.get('base64')
+      b64 = Base64.decode64( event.get('base64'))
+      s = StringIO.new(b64)
+      json = JSON.parse(Zlib::GzipReader.new(s).read)
 
-      @logger.debug? && @logger.debug("Message is now: #{event.get("message")}")
-
-      if event.get('[base64]')
-        b64 = Base64.decode64( event.get('[base64]'))
-        s = StringIO.new(b64)
-        json = JSON.parse(Zlib::GzipReader.new(s).read)
-
-        json.each do |key|
-          e =  LogStash::Event.new("timestamp" => event["timestamp"],
-            "key" => key)
-          yield e
-        end
-        event.cancel
+      json.each do |key|
+        # e =  LogStash::Event.new("timestamp" => event.get('timestamp'), "key" => key)
+        e =  LogStash::Event.new(key)
+        yield e
       end
-
-      @logger.debug? && @logger.debug("Message is now: #{event.get("[base64]")}")
-
-
+      event.cancel
     end
+
+    @logger.debug? && @logger.debug("Message is now: #{event.get('base64')}")
 
     # filter_matched should go in the last line of our successful code
     filter_matched(event)
