@@ -40,7 +40,7 @@ class LogStash::Filters::Base64Splitter < LogStash::Filters::Base
       json.each do |key|
         e =  LogStash::Event.new(key)
         e.set('key', event.get('key')) #keep parent 'key' type
-        e.set('type', event.get('type')) #keep parent 'key' type
+        e.set('type', event.get('type')) #keep parent 'type' type
         yield e
       end
       event.cancel
