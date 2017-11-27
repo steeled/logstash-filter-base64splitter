@@ -8,10 +8,9 @@ require "zlib"
 require "stringio"
 require "json"
 
-# This example filter will replace the contents of the default
-# message field with whatever you specify in the configuration.
-#
-# It is only intended to be used as an example.
+# Splits a zipped, base64 encoded payload into
+# individual events.
+
 class LogStash::Filters::Base64Splitter < LogStash::Filters::Base
 
   # Setting the config_name here is required. This is how you
@@ -38,7 +37,11 @@ class LogStash::Filters::Base64Splitter < LogStash::Filters::Base
   def filter(event)
     return unless filter?(event)
 
-    # @logger.debug? && @logger.debug("Message is now: #{event.get("[base64]")}")
+    # Assume incoming message is converted to json
+    # {
+    #   "base64" : "H4si...EAAA==",
+    #   "someKey" : "exampleValue"
+    # }
 
     if event.get('base64')
       b64 = Base64.decode64( event.get('base64'))
@@ -46,7 +49,6 @@ class LogStash::Filters::Base64Splitter < LogStash::Filters::Base
       json = JSON.parse(Zlib::GzipReader.new(s).read)
 
       json.each do |key|
-        # e =  LogStash::Event.new("timestamp" => event.get('timestamp'), "key" => key)
         e =  LogStash::Event.new(key)
         yield e
       end
