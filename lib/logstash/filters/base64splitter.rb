@@ -13,20 +13,9 @@ require "json"
 
 class LogStash::Filters::Base64Splitter < LogStash::Filters::Base
 
-  # Setting the config_name here is required. This is how you
-  # configure this filter from your Logstash config.
-  #
-  # filter {
-  #   example {
-  #     message => "My message..."
-  #   }
-  # }
-  #
   config_name "base64splitter"
 
-  # Replace the message with this value.
   config :message, :validate => :string, :default => "Hello World!"
-
 
   public
   def register
@@ -40,7 +29,7 @@ class LogStash::Filters::Base64Splitter < LogStash::Filters::Base
     # Assume incoming message is converted to json
     # {
     #   "base64" : "H4si...EAAA==",
-    #   "someKey" : "exampleValue"
+    #   "key" : "keyValue"
     # }
 
     if event.get('base64')
@@ -50,6 +39,8 @@ class LogStash::Filters::Base64Splitter < LogStash::Filters::Base
 
       json.each do |key|
         e =  LogStash::Event.new(key)
+        e.set('key', event.get('key')) #keep parent 'key' type
+        e.set('type', event.get('type')) #keep parent 'key' type
         yield e
       end
       event.cancel
@@ -57,7 +48,6 @@ class LogStash::Filters::Base64Splitter < LogStash::Filters::Base
 
     @logger.debug? && @logger.debug("Message is now: #{event.get('base64')}")
 
-    # filter_matched should go in the last line of our successful code
     filter_matched(event)
   end # def filter
 end # class LogStash::Filters::Base64Splitter
